@@ -87,7 +87,7 @@ class CommonFunctions:
         stock_gain = self.get_stock_predicted_gain(stock_name, stock_dict)
         return quantity * stock_price * stock_gain
 
-    def calculate_total_gain(self, purchase_list: list, stock_names_list: list, stocks_dict: dict) -> int:
+    def calculate_total_gain(self, stock_names_list: list, stocks_dict: dict, purchase_list: list = []) -> int:
         """
         Calculates total gains for a list of stocks purchases
         :param purchase_list: list of stocks purchases
@@ -156,10 +156,13 @@ class BruteForceCalculation:
             stock_index: int,
             stock_names_list: list,
             stocks_dict: dict,
-            purchase_list: list
+            purchase_list: list,
+            best_list: list = None
     ):
         """
         Calculates the best purchase option for a given limit and a given list of stock prices and expected gains
+        :param best_list: takes into account the last bast_list found so far. Empty if not declared.
+        :type best_list: list
         :param purchase_limit: maximum amount to be expended in stock purchases
         :type purchase_limit: int
         :param stock_index: stock position for which we try all purchase options
@@ -173,56 +176,71 @@ class BruteForceCalculation:
         :return: nothing
         :rtype:
         """
-        # Declaration of best gain and best list variables that will stock the best solution found by the algo
-        best_gain = 0
-        best_list = []
+        # Declaration of best list variable that will stock the best solution found by the algo
+        # Empty list if not provided
+        best_list = best_list if best_list else [0] * 20
 
         # Declaration of the remaining limit value
-        remaining_limit = purchase_limit
+        remaining_limit = self.common_functions.calculate_remaining_limit(
+                    purchase_limit, purchase_list, stock_names_list, stocks_dict)
 
         # Save stock name and value for a given iteration
         stock_name = self.common_functions.get_stock_name(stock_index, stock_names_list)
-        stock_price = self.common_functions(stock_name, stocks_dict)
+        stock_price = self.common_functions.get_stock_price(stock_name, stocks_dict)
 
         # We test all purchases quantity options possible in the remaining purchase limit
         for purchase_quantity in range(0, int(remaining_limit/stock_price + 1)):
+            # We update the purchases quantity in the purchase list position of the given stock
+            purchase_list[stock_index] = purchase_quantity
 
-            # We go through the calculation steps only if the remaining limit is higher than the stock price
-            if remaining_limit > stock_price:
-                # We update the purchases quantity in the purchase list position of the given stock
-                purchase_list[stock_index] = purchase_quantity
+            # We update the remaining limit based on the ongoing quantity purchase test
+            remaining_limit = self.common_functions.calculate_remaining_limit(
+                purchase_limit, purchase_list, stock_names_list, stocks_dict)
 
-                # We update the remaining limit based on the ongoing quantity purchase test
-                remaining_limit = self.common_functions.calculate_remaining_limit(purchase_limit, purchase_list, stock_names_list, stocks_dict)
+            # Calculate best gain seen so far
+            best_gain = self.common_functions.calculate_total_gain(
+                stock_names_list=stock_names_list,
+                stocks_dict=stocks_dict,
+                purchase_list=best_list
+            )
 
-                # If the stock index in the stock list is not the last one, then we recursively call the function with
-                # the following stock in the list
-                if stock_index < len(stock_names_list) - 1:
-                    self.brute_force_calculation(
-                        purchase_limit=purchase_limit,
-                        stock_index=stock_index + 1,
-                        stock_names_list=stock_names_list,
-                        purchase_list=purchase_list,
-                        stocks_dict=stocks_dict
-                    )
-                # If it's the last stock on the list, we calculate the current gain
-                else:
-                    current_gain = self.common_functions.calculate_total_gain(purchase_list, stock_names_list, stocks_dict)
-                    # If the current gain is better than the best found so far, it becomes the best gain, and we update
-                    # the best purchase list with the ongoing purchase test
-                    if current_gain > best_gain:
-                        best_gain = current_gain
-                        best_list = purchase_list.copy()
-            else:
-                pass
+            # Calculate current gain
+            current_gain = self.common_functions.calculate_total_gain(
+                purchase_list=purchase_list,
+                stock_names_list=stock_names_list,
+                stocks_dict=stocks_dict
+            )
 
-        # print best list and best gain
-        print(f"best list {best_list}")
-        print(f"best gain {best_gain/100}")
+            # If the current gain is better than the best found so far, we update
+            # the best purchase list with the ongoing purchase test
+            if current_gain > best_gain:
+                best_list = purchase_list.copy()
+
+            # if we are not at then end of the list of stocks we recursively call the function
+            elif stock_index < len(stock_names_list) - 1:
+                new_best_list = self.brute_force_calculation(
+                    purchase_limit=purchase_limit,
+                    stock_index=stock_index + 1,
+                    stock_names_list=stock_names_list,
+                    purchase_list=purchase_list,
+                    stocks_dict=stocks_dict,
+                    best_list=best_list
+                )
+                new_best_gain = self.common_functions.calculate_total_gain(
+                    purchase_list=new_best_list, stock_names_list=stock_names_list, stocks_dict=stocks_dict)
+                if new_best_gain > best_gain:
+                    best_list = new_best_list.copy()
+            print(best_list)
+            print(best_gain)
+            # print(purchase_list)
+            # print(remaining_limit)
 
         # We set the stock purchase quantity back to 0 in the purchase list in order to test over from zéro with
         # a higher previous index.
         purchase_list[stock_index] = 0
+
+        # return best list
+        return best_list
 
 
 def main():
@@ -230,10 +248,9 @@ def main():
     brute_force_calculation = BruteForceCalculation(common_functions)
     dict_stocks = common_functions.csv_to_dict(common_functions.DATASET_FILE)
     stock_names_list = common_functions.stock_dict_to_stock_name_list(dict_stocks)
-    # purchase_list = [1] * 20
-    # print(calculate_remaining_limit(500, purchase_list, stock_names_list, dict_stocks))
     purchase_list = [0] * len(stock_names_list)
-    brute_force_calculation.brute_force_calculation(500, 0, stock_names_list, dict_stocks, purchase_list)
+    best_list = brute_force_calculation.brute_force_calculation(500, 0, stock_names_list, dict_stocks, purchase_list)
+    print(best_list)
 
 
 if __name__ == "__main__":
