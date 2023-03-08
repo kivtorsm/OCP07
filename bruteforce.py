@@ -4,6 +4,13 @@ DATASET_FILE = "test_datasets/dataset0.csv"
 
 
 def csv_to_dict(file_path: str) -> dict:
+    """
+    Transforms csv data into a dictionary
+    :param file_path: path for the file to ve converted
+    :type file_path: str
+    :return: dictionary with csv file data
+    :rtype: dict
+    """
     with open(file_path, 'r', encoding='utf-8-sig') as file:
         reader = csv.DictReader(file)
         dict_stocks = {}
@@ -13,28 +20,84 @@ def csv_to_dict(file_path: str) -> dict:
 
 
 def stock_dict_to_stock_name_list(stock_dict: dict) -> list:
+    """
+    Gets a list of stock names from a dict
+    :param stock_dict: dictionary containing all stocks data
+    :type stock_dict: dict
+    :return: list of stock names
+    :rtype: list
+    """
     return list(stock_dict.keys())
 
 
 def get_stock_price(stock_name: str, stock_dict: dict) -> int:
+    """
+    Gets the price of a given stock
+    :param stock_name: name of the stock for which we want to obtain the price
+    :type stock_name: str
+    :param stock_dict: dictionary containing all stock data
+    :type stock_dict: dict
+    :return: price for the stock requested
+    :rtype: int
+    """
     return int(stock_dict[stock_name]['Cout'])
 
 
 def get_stock_predicted_gain(stock_name: str, stock_dict: dict) -> int:
+    """
+    Gets the predicted gain for a given stock
+    :param stock_name: name of the stock for which we want to obtain a predicted gain
+    :type stock_name: str
+    :param stock_dict: dictionary containing all stocks data
+    :type stock_dict: dict
+    :return: expected gain in 2 years time
+    :rtype: int
+    """
     return int(stock_dict[stock_name]['Benefice'])
 
 
 def get_stock_name(stock_index: int, stock_names_list: list) -> str:
+    """
+    Gets the name of the stock in a given position in the list
+    :param stock_index: index ou position du stock dans la liste
+    :type stock_index: int
+    :param stock_names_list: liste des noms des stocks
+    :type stock_names_list: list
+    :return: nom du stock
+    :rtype: str
+    """
     return stock_names_list[stock_index]
 
 
 def calculate_stock_gain(quantity: int, stock_name: str, stock_dict: dict) -> int:
+    """
+    Calculates stock for the purchase of a single stock value
+    :param quantity: purchase quantity for the stock
+    :type quantity: int
+    :param stock_name: name of the stock being purchased
+    :type stock_name: str
+    :param stock_dict: dictionary containing all stock data
+    :type stock_dict: dict
+    :return: stock gain up to 2 numbers below 1
+    :rtype: int
+    """
     stock_price = get_stock_price(stock_name, stock_dict)
     stock_gain = get_stock_predicted_gain(stock_name, stock_dict)
     return quantity * stock_price * stock_gain
 
 
 def calculate_total_gain(purchase_list: list, stock_names_list: list, stocks_dict: dict) -> int:
+    """
+    Calculates total gains for a list of stocks purchases
+    :param purchase_list: list of stocks purchases
+    :type purchase_list: list
+    :param stock_names_list: all names of stocks
+    :type stock_names_list: list
+    :param stocks_dict: dictionary containing all stocks data
+    :type stocks_dict: dict
+    :return: total gain obtained with the purchase list up to 2 numbers below 1
+    :rtype: int
+    """
     gain = 0
     for purchase_index in range(len(purchase_list)):
         stock_name = stock_names_list[purchase_index]
@@ -42,48 +105,103 @@ def calculate_total_gain(purchase_list: list, stock_names_list: list, stocks_dic
     return gain
 
 
+def calculate_remaining_limit(
+        initial_limit: int, purchase_list: list, stocks_names_list: list, stocks_dict: dict) -> int:
+    """
+    Calculates remaining purchase limit after a list of purchases. Initial limit - sum_all(stock_purchase * price)
+    :param initial_limit: initial given limit for operations
+    :type initial_limit: int
+    :param purchase_list: list of stock purchases
+    :type purchase_list: list
+    :param stocks_names_list: all stocks names
+    :type stocks_names_list: list
+    :param stocks_dict: all stocks data
+    :type stocks_dict: dict
+    :return: remaining limit after purchases
+    :rtype: int
+    """
+    total_cost = calculate_total_cost(purchase_list, stocks_names_list, stocks_dict)
+    return initial_limit - total_cost
+
+
+def calculate_total_cost(purchase_list: list, stocks_names_list: list, stocks_dict: dict) -> int:
+    """
+    Calculates total cost of a series of purchases
+    :param purchase_list: contains all purchases
+    :type purchase_list: list
+    :param stocks_names_list: all stock names
+    :type stocks_names_list: list
+    :param stocks_dict: all stock data
+    :type stocks_dict: dict
+    :return: total cost of all purchases
+    :rtype: int
+    """
+    total_cost = 0
+    for purchase_index in range(len(purchase_list)):
+        total_cost += purchase_list[purchase_index] * int(stocks_dict[stocks_names_list[purchase_index]]['Cout'])
+    return total_cost
+
+
 def brute_force_calculation(
         purchase_limit: int,
         stock_index: int,
         stock_names_list: list,
         stocks_dict: dict,
-        purchase_list: list = [0] * 20
+        purchase_list: list
 ):
+    """
+    Calculates the best purchase option for a given limit and a given list of stock prices and expected gains
+    :param purchase_limit: maximum amount to be expended in stock purchases
+    :type purchase_limit: int
+    :param stock_index: stock position for which we try all purchase options
+    :type stock_index: int
+    :param stock_names_list: all stock names
+    :type stock_names_list: list
+    :param stocks_dict: all stock data
+    :type stocks_dict: dict
+    :param purchase_list: ongoing list of purchases
+    :type purchase_list: list
+    :return: nothing
+    :rtype:
+    """
     best_gain = 0
     best_list = []
+    remaining_limit = purchase_limit
     stock_name = get_stock_name(stock_index, stock_names_list)
     stock_price = get_stock_price(stock_name, stocks_dict)
-    for purchase_quantity in range(int(purchase_limit/stock_price)):
-        if purchase_limit > stock_price:
-            print(purchase_limit)
-            print(int(purchase_limit / stock_price))
+    for purchase_quantity in range(0, int(remaining_limit/stock_price + 1)):
+        if remaining_limit > stock_price:
             purchase_list[stock_index] = purchase_quantity
-            print(f"purchase list {purchase_list}")
-            purchase_amount = purchase_quantity * stock_price
-            purchase_limit -= purchase_amount
+            remaining_limit = calculate_remaining_limit(purchase_limit, purchase_list, stock_names_list, stocks_dict)
+
             if stock_index < len(stock_names_list) - 1:
-                stock_index += 1
-                print(f"stock index {stock_index}")
                 brute_force_calculation(
                     purchase_limit=purchase_limit,
-                    stock_index=stock_index,
+                    stock_index=stock_index + 1,
                     stock_names_list=stock_names_list,
                     purchase_list=purchase_list,
                     stocks_dict=stocks_dict
                 )
             else:
+                print(f"stock list position {stock_index}")
                 current_gain = calculate_total_gain(purchase_list, stock_names_list, stocks_dict)
                 if current_gain > best_gain:
                     best_gain = current_gain
                     best_list = purchase_list.copy()
+        else:
+            pass
     print(f"best list {best_list}")
     print(f"best gain {best_gain/100}")
+    purchase_list[stock_index] = 0
 
 
 def main():
     dict_stocks = csv_to_dict(DATASET_FILE)
     stock_names_list = stock_dict_to_stock_name_list(dict_stocks)
-    brute_force_calculation(500, 0, stock_names_list, dict_stocks)
+    # purchase_list = [1] * 20
+    # print(calculate_remaining_limit(500, purchase_list, stock_names_list, dict_stocks))
+    purchase_list = [0] * len(stock_names_list)
+    brute_force_calculation(500, 0, stock_names_list, dict_stocks, purchase_list)
 
 
 if __name__ == "__main__":
