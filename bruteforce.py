@@ -191,7 +191,7 @@ class BruteForceCalculation:
         stock_price = self.common_functions.get_stock_price(stock_name, stocks_dict)
 
         # We test all purchases quantity options possible in the remaining purchase limit
-        for purchase_quantity in range(0, int(remaining_limit/stock_price + 1)):
+        for purchase_quantity in range(0, min(int(remaining_limit/stock_price + 1), 2)):
             # We update the purchases quantity in the purchase list position of the given stock
             purchase_list[stock_index] = purchase_quantity
 
@@ -234,7 +234,7 @@ class BruteForceCalculation:
                     best_list = new_best_list.copy()
             # print(best_list)
             # print(best_gain)
-            print(purchase_list)
+            # print(purchase_list)
             # print(remaining_limit)
 
         # We set the stock purchase quantity back to 0 in the purchase list in order to test over from zéro with
