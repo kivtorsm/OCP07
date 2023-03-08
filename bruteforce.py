@@ -164,16 +164,30 @@ def brute_force_calculation(
     :return: nothing
     :rtype:
     """
+    # Declaration of best gain and best list variables that will stock the best solution found by the algo
     best_gain = 0
     best_list = []
+
+    # Declaration of the remaining limit value
     remaining_limit = purchase_limit
+
+    # Save stock name and value for a given iteration
     stock_name = get_stock_name(stock_index, stock_names_list)
     stock_price = get_stock_price(stock_name, stocks_dict)
+
+    # We test all purchases quantity options possible in the remaining purchase limit
     for purchase_quantity in range(0, int(remaining_limit/stock_price + 1)):
+
+        # We go through the calculation steps only if the remaining limit is higher than the stock price
         if remaining_limit > stock_price:
+            # We update the purchases quantity in the purchase list position of the given stock
             purchase_list[stock_index] = purchase_quantity
+
+            # We update the remaining limit based on the ongoing quantity purchase test
             remaining_limit = calculate_remaining_limit(purchase_limit, purchase_list, stock_names_list, stocks_dict)
 
+            # If the stock index in the stock list is not the last one, then we recursively call the function with
+            # the following stock in the list
             if stock_index < len(stock_names_list) - 1:
                 brute_force_calculation(
                     purchase_limit=purchase_limit,
@@ -182,16 +196,23 @@ def brute_force_calculation(
                     purchase_list=purchase_list,
                     stocks_dict=stocks_dict
                 )
+            # If it's the last stock on the list, we calculate the current gain
             else:
-                print(f"stock list position {stock_index}")
                 current_gain = calculate_total_gain(purchase_list, stock_names_list, stocks_dict)
+                # If the current gain is better than the best found so far, it becomes the best gain, and we update
+                # the best purchase list with the ongoing purchase test
                 if current_gain > best_gain:
                     best_gain = current_gain
                     best_list = purchase_list.copy()
         else:
             pass
+
+    # print best list and best gain
     print(f"best list {best_list}")
     print(f"best gain {best_gain/100}")
+
+    # We set the stock purchase quantity back to 0 in the purchase list in order to test over from zéro with
+    # a higher previous index.
     purchase_list[stock_index] = 0
 
 
