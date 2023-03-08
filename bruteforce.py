@@ -18,7 +18,7 @@ class CommonFunctions:
             reader = csv.DictReader(file)
             dict_stocks = {}
             for line in reader:
-                dict_stocks[line['Action']] = {'Cout': line['Cout'], 'Benefice': line['Benefice']}
+                dict_stocks[line['Action']] = {'Cout': int(line['Cout']), 'Benefice': int(line['Benefice'])}
             return dict_stocks
 
     @staticmethod
