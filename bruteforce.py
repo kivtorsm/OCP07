@@ -156,7 +156,7 @@ class BruteForceCalculation:
             stock_index: int,
             stock_names_list: list,
             stocks_dict: dict,
-            purchase_list: list,
+            purchase_list: list = None,
             best_list: list = None
     ):
         """
@@ -179,6 +179,8 @@ class BruteForceCalculation:
         # Declaration of best list variable that will stock the best solution found by the algo
         # Empty list if not provided
         best_list = best_list if best_list else [0] * 20
+
+        purchase_list = purchase_list if purchase_list else [0] * 20
 
         # Declaration of the remaining limit value
         remaining_limit = self.common_functions.calculate_remaining_limit(
@@ -230,9 +232,9 @@ class BruteForceCalculation:
                     purchase_list=new_best_list, stock_names_list=stock_names_list, stocks_dict=stocks_dict)
                 if new_best_gain > best_gain:
                     best_list = new_best_list.copy()
-            print(best_list)
-            print(best_gain)
-            # print(purchase_list)
+            # print(best_list)
+            # print(best_gain)
+            print(purchase_list)
             # print(remaining_limit)
 
         # We set the stock purchase quantity back to 0 in the purchase list in order to test over from zéro with
@@ -248,8 +250,7 @@ def main():
     brute_force_calculation = BruteForceCalculation(common_functions)
     dict_stocks = common_functions.csv_to_dict(common_functions.DATASET_FILE)
     stock_names_list = common_functions.stock_dict_to_stock_name_list(dict_stocks)
-    purchase_list = [0] * len(stock_names_list)
-    best_list = brute_force_calculation.brute_force_calculation(500, 0, stock_names_list, dict_stocks, purchase_list)
+    best_list = brute_force_calculation.brute_force_calculation(500, 0, stock_names_list, dict_stocks)
     print(best_list)
 
 
