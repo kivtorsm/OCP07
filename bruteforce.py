@@ -1,4 +1,5 @@
 import csv
+import time
 
 
 class CommonFunctions:
@@ -219,7 +220,7 @@ class BruteForceCalculation:
                 best_list = purchase_list.copy()
 
             # if we are not at then end of the list of stocks we recursively call the function
-            elif stock_index < len(stock_names_list) - 1:
+            if stock_index < len(stock_names_list) - 1:
                 new_best_list = self.brute_force_calculation(
                     purchase_limit=purchase_limit,
                     stock_index=stock_index + 1,
@@ -252,7 +253,10 @@ def main():
     stock_names_list = common_functions.stock_dict_to_stock_name_list(dict_stocks)
     best_list = brute_force_calculation.brute_force_calculation(500, 0, stock_names_list, dict_stocks)
     print(best_list)
+    print(stock_names_list)
 
 
 if __name__ == "__main__":
+    start_time = time.time()
     main()
+    print("--- %s seconds ---" % (time.time() - start_time))
