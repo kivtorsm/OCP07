@@ -119,51 +119,49 @@ class Optimized:
                     best_list = new_best_list.copy()
                     best_gain = self.common_functions.calculate_total_gain(stock_names_list, stocks_dict, best_list)
             print(best_list)
-            print(best_gain)
+            # print(best_gain)
             # print(purchase_list)
             # print(remaining_limit)
 
-        # We set the stock purchase quantity back to 0 in the purchase list in order to test over from zéro with
-        # a higher previous index.
+        # We set the stock purchase quantity back to initial value in order to test over
         purchase_list[stock_index] = 1
 
-        # return best list
         return best_list
+
+    def run_optimized(self):
+        dict_stocks = self.common_functions.csv_to_dict(self.common_functions.DATASET_FILE)
+        dict_stocks_sorted = self.sort_dict_by_gain(dict_stocks)
+        stock_names_list = self.common_functions.stock_dict_to_stock_name_list(dict_stocks_sorted)
+        best_list = self.optimized_calculation(
+            500,
+            0,
+            stock_names_list,
+            dict_stocks_sorted
+        )
+        return best_list
+        print(stock_names_list)
+        print(best_list)
+        best_gain = self.common_functions.calculate_total_gain(stock_names_list, dict_stocks_sorted, best_list)
+        print(best_gain)
 
 
 def main():
+    # save start time
+    start_time = time.time()
+
+    # Initialize controllers
     common_functions = CommonFunctions()
     optimized_calculation = Optimized(common_functions)
-    dict_stocks = common_functions.csv_to_dict(common_functions.DATASET_FILE)
-    dict_stocks_sorted = optimized_calculation.sort_dict_by_gain(dict_stocks)
-    stock_names_list = common_functions.stock_dict_to_stock_name_list(dict_stocks_sorted)
-    best_list = optimized_calculation.optimized_calculation(
-        500,
-        0,
-        stock_names_list,
-        dict_stocks_sorted
-    )
-    # best_list = [0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1]
-    print(stock_names_list)
-    print(best_list)
-    best_gain = common_functions.calculate_total_gain(stock_names_list, dict_stocks_sorted, best_list)
-    print(best_gain)
 
-
-if __name__ == "__main__":
-    start_time = time.time()
-    # main()
-
-    # Start foo as a process
-    p = multiprocessing.Process(target=main, name="main")
+    # Start run as a process
+    p = multiprocessing.Process(target=optimized_calculation.run_optimized, name="run_optimized")
     p.start()
 
-    # Wait 10 seconds for foo
+    # Wait x seconds for the process
     # time.sleep(10)
-    p.join(2)
+    p.join(3)
 
     # Terminate foo
-    print(p.is_alive())
     if p.is_alive():
         print("foo is running... let's kill it...")
 
@@ -172,3 +170,7 @@ if __name__ == "__main__":
         p.join()
 
     print("--- %s seconds ---" % (time.time() - start_time))
+
+
+if __name__ == "__main__":
+    main()
