@@ -34,7 +34,7 @@ class CommonFunctions:
         return list(stock_dict.keys())
 
     @staticmethod
-    def get_price_list(stock_dict: dict) -> list:
+    def get_price_dict(stock_dict: dict) -> dict:
         """
         Gets a list of stock names from a dict
         :param stock_dict: dictionary containing all stocks data
@@ -42,7 +42,7 @@ class CommonFunctions:
         :return: list of stock names
         :rtype: list
         """
-        return [value['Cout'] for value in stock_dict.values()]
+        return {key: value['Cout'] for key, value in stock_dict.items()}
 
     @staticmethod
     def get_stock_price(stock_name: str, stock_dict: dict) -> int:
@@ -265,6 +265,7 @@ def main():
     best_list = brute_force_calculation.brute_force_calculation(500, 0, stock_names_list, dict_stocks)
     print(best_list)
     print(stock_names_list)
+    # print(common_functions.get_price_dict(dict_stocks))
 
 
 if __name__ == "__main__":
