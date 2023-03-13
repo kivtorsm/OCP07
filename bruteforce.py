@@ -34,6 +34,17 @@ class CommonFunctions:
         return list(stock_dict.keys())
 
     @staticmethod
+    def get_price_list(stock_dict: dict) -> list:
+        """
+        Gets a list of stock names from a dict
+        :param stock_dict: dictionary containing all stocks data
+        :type stock_dict: dict
+        :return: list of stock names
+        :rtype: list
+        """
+        return [value['Cout'] for value in stock_dict.values()]
+
+    @staticmethod
     def get_stock_price(stock_name: str, stock_dict: dict) -> int:
         """
         Gets the price of a given stock
