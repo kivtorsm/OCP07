@@ -1,5 +1,6 @@
 import multiprocessing
 import time
+import copy
 
 from operator import getitem
 from collections import OrderedDict
@@ -22,11 +23,54 @@ class Optimized:
         """
         return OrderedDict(sorted(stocks_dict.items(), key=lambda x: getitem(x[1], 'Benefice'), reverse=True))
 
+    def find_all_combinations(
+            self,
+            purchase_limit: int,
+            current_sum: int,
+            stock_price_dict: dict,
+            price_dict_result: dict = None,
+            stock_name_list_result: list = None,
+            output: list = None
+    ):
+        price_dict_result = price_dict_result if price_dict_result else {}
+        stock_name_list_result = stock_name_list_result if stock_name_list_result else []
+        output = output if output else []
+
+        if not stock_price_dict:
+            output.append(copy.copy(stock_name_list_result))
+
+        for key, value in stock_price_dict.items():
+            if current_sum + value < purchase_limit:
+                temp_sum = current_sum + value
+                print(key + " - " + str(value))
+                print(type(price_dict_result))
+                price_dict_result[key] = value
+                stock_name_list_result.append(key)
+                remaining_dict = stock_price_dict.copy()
+                for key2, value2 in remaining_dict.items():
+                    print("remaining dict")
+                    print(key2 + " - " + str(value2))
+                del remaining_dict[key]
+                remaining_possible_stocks = {
+                    key: value for key, value in remaining_dict.items() if value < (purchase_limit - current_sum)}
+                self.find_all_combinations(
+                    purchase_limit,
+                    temp_sum,
+                    remaining_possible_stocks,
+                    price_dict_result,
+                    output
+                )
+                del price_dict_result[key]
+
+        print(f" output: {output}")
+
     def optimized_calculation(
             self,
             purchase_limit: int,
+            current_sum: int,
             stock_index: int,
             stock_names_list: list,
+            stock_price_list: list,
             stocks_dict: dict,
             purchase_list: list = None,
             best_list: list = None
@@ -37,53 +81,54 @@ class Optimized:
                 :type best_list: list
                 :param purchase_limit: maximum amount to be expended in stock purchases
                 :type purchase_limit: int
+                :param current_sum: ongoing sum of prices
+                :type current_sum: int
                 :param stock_index: stock position for which we try all purchase options
                 :type stock_index: int
                 :param stock_names_list: all stock names
                 :type stock_names_list: list
+                :param stock_price_list: all stock prices
+                :type stock_price_list: list
                 :param stocks_dict: all stock data
                 :type stocks_dict: dict
                 :param purchase_list: ongoing list of purchases
                 :type purchase_list: list
-                :return: nothing
-                :rtype:
+                :return: best purchase list
+                :rtype: list
                 """
         # Declaration of best list variable that will stock the best solution found by the algo
         # Empty list if not provided
-        best_list = best_list if best_list else [0] * 20
+        best_list = best_list if best_list else [0] * len(stock_price_list)
         best_gain = self.common_functions.calculate_total_gain(stock_names_list, stocks_dict, best_list)
 
-        purchase_list = purchase_list if purchase_list else [1] * 20
+        purchase_list = purchase_list if purchase_list else [1] * len(stock_price_list)
 
         # Declaration of the remaining limit value
-        remaining_limit = self.common_functions.calculate_remaining_limit(
-            purchase_limit, purchase_list, stock_names_list, stocks_dict)
         total_cost = self.common_functions.calculate_total_cost(
             purchase_list, stock_names_list, stocks_dict
         )
-        excess_purchase = total_cost - purchase_limit
 
-        # Save stock name and value for a given iteration
-        stock_name = self.common_functions.get_stock_name(stock_index, stock_names_list)
-        stock_price = self.common_functions.get_stock_price(stock_name, stocks_dict)
+        if not stock_price_list:
+            output.append(copy.copy(result))
+
+        for price in stock_price_list:
+            temp_sum = current_sum + price
+
 
         # We test all purchases quantity options possible in the remaining purchase limit
-        max_range = min(int(excess_purchase / stock_price + 1), 2)
+        max_range = min(int((total_cost - purchase_limit) / stock_price_list[stock_index] + 1), 2)
         for purchase_quantity in reversed(range(0, max_range)):
             # We update the purchases quantity in the purchase list position of the given stock
             purchase_list[stock_index] = purchase_quantity
 
             # We update the remaining limit based on the ongoing quantity purchase test
-            remaining_limit = self.common_functions.calculate_remaining_limit(
-                purchase_limit, purchase_list, stock_names_list, stocks_dict)
             total_cost = self.common_functions.calculate_total_cost(
                 purchase_list, stock_names_list, stocks_dict
             )
-            excess_purchase = total_cost - purchase_limit
 
             # if we come below the purchase limit, then we calculate the gain and compare
             # it to the best gain obtained
-            if not excess_purchase > 0:
+            if total_cost < purchase_limit:
                 # Calculate best gain seen so far
                 best_gain = self.common_functions.calculate_total_gain(
                     stock_names_list=stock_names_list,
@@ -138,11 +183,11 @@ class Optimized:
             stock_names_list,
             dict_stocks_sorted
         )
-        return best_list
         print(stock_names_list)
         print(best_list)
         best_gain = self.common_functions.calculate_total_gain(stock_names_list, dict_stocks_sorted, best_list)
         print(best_gain)
+        return best_list
 
 
 def main():
@@ -173,4 +218,11 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    # main()
+    common_functions = CommonFunctions()
+    optimized_calculation = Optimized(common_functions)
+    dict_stocks = common_functions.csv_to_dict(common_functions.DATASET_FILE)
+    dict_stocks_sorted = optimized_calculation.sort_dict_by_gain(dict_stocks)
+    stock_names_list = common_functions.stock_dict_to_stock_name_list(dict_stocks_sorted)
+    stock_price_dict = common_functions.get_price_dict(dict_stocks_sorted)
+    optimized_calculation.find_all_combinations(500, 0, stock_price_dict, None, [], [])

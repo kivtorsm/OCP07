@@ -42,7 +42,7 @@ class CommonFunctions:
         :return: list of stock names
         :rtype: list
         """
-        return {key: value['Cout'] for key, value in stock_dict.items()}
+        return dict({key: value['Cout'] for key, value in stock_dict.items()})
 
     @staticmethod
     def get_stock_price(stock_name: str, stock_dict: dict) -> int:
