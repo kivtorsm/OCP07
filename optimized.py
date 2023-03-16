@@ -50,25 +50,23 @@ class Optimized:
                 """
         # Declaration of best list variable that will stock the best solution found by the algo
         # Empty list if not provided
-        best_list = best_list if best_list else [0] * 20
+        best_list = best_list if best_list else [0] * len(stock_names_list)
         best_gain = self.common_functions.calculate_total_gain(stock_names_list, stocks_dict, best_list)
 
-        purchase_list = purchase_list if purchase_list else [1] * 20
+        purchase_list = purchase_list if purchase_list else [0] * len(stock_names_list)
 
         # Declaration of the remaining limit value
         remaining_limit = self.common_functions.calculate_remaining_limit(
             purchase_limit, purchase_list, stock_names_list, stocks_dict)
-        total_cost = self.common_functions.calculate_total_cost(
-            purchase_list, stock_names_list, stocks_dict
-        )
-        excess_purchase = total_cost - purchase_limit
+
+        # print(f"remaining limit {remaining_limit}")
 
         # Save stock name and value for a given iteration
         stock_name = self.common_functions.get_stock_name(stock_index, stock_names_list)
         stock_price = self.common_functions.get_stock_price(stock_name, stocks_dict)
 
         # We test all purchases quantity options possible in the remaining purchase limit
-        max_range = min(int(excess_purchase / stock_price + 1), 2)
+        max_range = min(int(remaining_limit / stock_price + 1), 2)
         for purchase_quantity in reversed(range(0, max_range)):
             # We update the purchases quantity in the purchase list position of the given stock
             purchase_list[stock_index] = purchase_quantity
@@ -83,7 +81,7 @@ class Optimized:
 
             # if we come below the purchase limit, then we calculate the gain and compare
             # it to the best gain obtained
-            if not excess_purchase > 0:
+            if excess_purchase < 0:
                 # Calculate best gain seen so far
                 best_gain = self.common_functions.calculate_total_gain(
                     stock_names_list=stock_names_list,
@@ -100,6 +98,8 @@ class Optimized:
 
                 # If the current gain is better than the best found so far, we update
                 # the best purchase list with the ongoing purchase test
+                # print(f"current gain {current_gain}")
+                # print(f"best gain {best_gain}")
                 if current_gain > best_gain:
                     best_list = purchase_list.copy()
 
@@ -118,36 +118,56 @@ class Optimized:
                 if new_best_gain > best_gain:
                     best_list = new_best_list.copy()
                     best_gain = self.common_functions.calculate_total_gain(stock_names_list, stocks_dict, best_list)
-            print(best_list)
+                    total_cost = self.common_functions.calculate_total_cost(best_list, stock_names_list, stocks_dict)
+                    return best_list
+            # print(best_list)
             # print(best_gain)
+            # print(total_cost)
             # print(purchase_list)
             # print(remaining_limit)
 
         # We set the stock purchase quantity back to initial value in order to test over
-        purchase_list[stock_index] = 1
+        purchase_list[stock_index] = 0
 
         return best_list
 
     def run_optimized(self):
-        dict_stocks = self.common_functions.csv_to_dict(self.common_functions.DATASET_FILE)
+        # save start time
+        start_time = time.time()
+        dict_stocks = self.common_functions.csv_to_dict(self.common_functions.DATASET_FILE1)
         dict_stocks_sorted = self.sort_dict_by_gain(dict_stocks)
+        # for key, value in dict_stocks_sorted.items():
+        #     print(f"{key} - {value}")
         stock_names_list = self.common_functions.stock_dict_to_stock_name_list(dict_stocks_sorted)
+        print("--- %s seconds de triage ---" % (time.time() - start_time))
+
+        # save start time
+        start_time2 = time.time()
+
         best_list = self.optimized_calculation(
-            500,
+            50000,
             0,
             stock_names_list,
             dict_stocks_sorted
         )
-        return best_list
-        print(stock_names_list)
-        print(best_list)
+
+        print("--- %s seconds de recherche de solution---" % (time.time() - start_time2))
+
+        # print(stock_names_list)
+        # print(best_list)
         best_gain = self.common_functions.calculate_total_gain(stock_names_list, dict_stocks_sorted, best_list)
-        print(best_gain)
+        total_cost = self.common_functions.calculate_total_cost(best_list, stock_names_list, dict_stocks)
+        purchase_stock_name_list = self.common_functions.purchase_list_to_stock_name_list(best_list, stock_names_list)
+        print(f"best gain {best_gain}")
+        print(f"total cost {total_cost/100}")
+        print(purchase_stock_name_list)
+
+        print("--- %s seconds au total---" % (time.time() - start_time))
 
 
 def main():
-    # save start time
-    start_time = time.time()
+    # # save start time
+    # start_time = time.time()
 
     # Initialize controllers
     common_functions = CommonFunctions()
@@ -159,7 +179,7 @@ def main():
 
     # Wait x seconds for the process
     # time.sleep(10)
-    p.join(3)
+    p.join()
 
     # Terminate foo
     if p.is_alive():
@@ -169,7 +189,7 @@ def main():
         p.terminate()
         p.join()
 
-    print("--- %s seconds ---" % (time.time() - start_time))
+    # print("--- %s seconds ---" % (time.time() - start_time))
 
 
 if __name__ == "__main__":
