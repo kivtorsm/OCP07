@@ -4,7 +4,14 @@ import time
 
 class CommonFunctions:
 
-    DATASET_FILE = "test_datasets/dataset0.csv"
+    DATASET_FILE0 = "test_datasets/dataset0.csv"
+    DATASET_FILE0_5 = "test_datasets/dataset0_5.csv"
+    DATASET_FILE0_10 = "test_datasets/dataset0_10.csv"
+    DATASET_FILE0_15 = "test_datasets/dataset0_15.csv"
+    DATASET_FILE1 = "test_datasets/dataset1.csv"
+    DATASET_FILE2 = "test_datasets/dataset2.csv"
+    DATASET_FILE2_500 = "test_datasets/dataset2_500.csv"
+    DATASET_FILE2_250 = "test_datasets/dataset2_250.csv"
 
     @staticmethod
     def csv_to_dict(file_path: str) -> dict:
@@ -19,7 +26,10 @@ class CommonFunctions:
             reader = csv.DictReader(file)
             dict_stocks = {}
             for line in reader:
-                dict_stocks[line['Action']] = {'Cout': int(line['Cout']), 'Benefice': int(line['Benefice'])}
+                # Take only prices > 0
+                if float(line['Cout']) > 0:
+                    dict_stocks[line['Action']] = \
+                        {'Cout': int(float(line['Cout'])*100), 'Benefice': int(float(line['Benefice'])*100)}
             return dict_stocks
 
     @staticmethod
@@ -74,21 +84,21 @@ class CommonFunctions:
 
     def calculate_stock_gain(self, quantity: int, stock_name: str, stock_dict: dict) -> int:
         """
-        Calculates stock for the purchase of a single stock value
+        Calculates stock for the purchase of a single stock value.
         :param quantity: purchase quantity for the stock
         :type quantity: int
         :param stock_name: name of the stock being purchased
         :type stock_name: str
         :param stock_dict: dictionary containing all stock data
         :type stock_dict: dict
-        :return: stock gain up to 2 numbers below 1
+        :return: stock gain up to 2 numbers below 1. given as *1000000 int value
         :rtype: int
         """
         stock_price = self.get_stock_price(stock_name, stock_dict)
         stock_gain = self.get_stock_predicted_gain(stock_name, stock_dict)
         return quantity * stock_price * stock_gain
 
-    def calculate_total_gain(self, stock_names_list: list, stocks_dict: dict, purchase_list: list = []) -> int:
+    def calculate_total_gain(self, stock_names_list: list, stocks_dict: dict, purchase_list: list = []) -> float:
         """
         Calculates total gains for a list of stocks purchases
         :param purchase_list: list of stocks purchases
@@ -104,7 +114,7 @@ class CommonFunctions:
         for purchase_index in range(len(purchase_list)):
             stock_name = stock_names_list[purchase_index]
             gain += self.calculate_stock_gain(purchase_list[purchase_index], stock_name, stocks_dict)
-        return gain
+        return gain/1000000
 
     def calculate_remaining_limit(
             self, initial_limit: int, purchase_list: list, stocks_names_list: list, stocks_dict: dict) -> int:
@@ -142,6 +152,13 @@ class CommonFunctions:
             total_cost += purchase_list[purchase_index] * int(stocks_dict[stocks_names_list[purchase_index]]['Cout'])
         return total_cost
 
+    @staticmethod
+    def purchase_list_to_stock_name_list (purchase_list: list, stock_name_list: list) -> list:
+        purchase_stock_name_list = []
+        for purchase_index in range(len(purchase_list)):
+            if purchase_list[purchase_index] == 1:
+                purchase_stock_name_list.append(stock_name_list[purchase_index])
+        return purchase_stock_name_list
 
 class BruteForceCalculation:
     """
@@ -179,9 +196,9 @@ class BruteForceCalculation:
         """
         # Declaration of best list variable that will stock the best solution found by the algo
         # Empty list if not provided
-        best_list = best_list if best_list else [0] * 20
+        best_list = best_list if best_list else [0] * len(stock_names_list)
 
-        purchase_list = purchase_list if purchase_list else [0] * 20
+        purchase_list = purchase_list if purchase_list else [0] * len(stock_names_list)
 
         # Declaration of the remaining limit value
         remaining_limit = self.common_functions.calculate_remaining_limit(
@@ -216,6 +233,8 @@ class BruteForceCalculation:
 
             # If the current gain is better than the best found so far, we update
             # the best purchase list with the ongoing purchase test
+            # print(current_gain)
+            # print(best_gain)
             if current_gain > best_gain:
                 best_list = purchase_list.copy()
 
@@ -249,11 +268,16 @@ class BruteForceCalculation:
 def main():
     common_functions = CommonFunctions()
     brute_force_calculation = BruteForceCalculation(common_functions)
-    dict_stocks = common_functions.csv_to_dict(common_functions.DATASET_FILE)
+    dict_stocks = common_functions.csv_to_dict(common_functions.DATASET_FILE0)
     stock_names_list = common_functions.stock_dict_to_stock_name_list(dict_stocks)
-    best_list = brute_force_calculation.brute_force_calculation(500, 0, stock_names_list, dict_stocks)
-    print(best_list)
-    print(stock_names_list)
+    best_list = brute_force_calculation.brute_force_calculation(50000, 0, stock_names_list, dict_stocks)
+    best_gain = common_functions.calculate_total_gain(stock_names_list, dict_stocks, best_list)
+    total_cost = common_functions.calculate_total_cost(best_list, stock_names_list, dict_stocks)
+    best_list_names = common_functions.purchase_list_to_stock_name_list(best_list, stock_names_list)
+    # print(best_list)
+    print(f"best gain : {best_gain}")
+    print(f"total cost : {total_cost/100}")
+    print(f"actions à acheter : {best_list_names}")
 
 
 if __name__ == "__main__":
