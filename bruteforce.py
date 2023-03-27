@@ -1,5 +1,6 @@
 import csv
 import time
+import tracemalloc
 
 
 class CommonFunctions:
@@ -93,28 +94,29 @@ class CommonFunctions:
         """
         return stock_names_list[stock_index]
 
-    # def calculate_stock_gain(self, quantity: int, stock_name: str, stock_dict: dict) -> int:
-    #     """
-    #     Calculates stock for the purchase of a single stock value.
-    #     :param quantity: purchase quantity for the stock
-    #     :type quantity: int
-    #     :param stock_name: name of the stock being purchased
-    #     :type stock_name: str
-    #     :param stock_dict: dictionary containing all stock data
-    #     :type stock_dict: dict
-    #     :return: stock gain up to 2 numbers below 1. given as *1000000 int value
-    #     :rtype: int
-    #     """
-    #     stock_price = self.get_stock_price(stock_name, stock_dict)
-    #     stock_gain = self.get_stock_predicted_gain(stock_name, stock_dict)
-    #     return quantity * stock_price * stock_gain
+    def calculate_stock_gain(self, stock_name: str, stock_dict: dict) -> int:
+        """
+        Calculates stock for the purchase of a single stock value.
+        :param quantity: purchase quantity for the stock
+        :type quantity: int
+        :param stock_name: name of the stock being purchased
+        :type stock_name: str
+        :param stock_dict: dictionary containing all stock data
+        :type stock_dict: dict
+        :return: stock gain up to 2 numbers below 1. given as *1000000 int value
+        :rtype: int
+        """
+        stock_price = self.get_stock_price(stock_name, stock_dict)
+        # print(type(stock_price))
+        stock_gain = self.get_stock_predicted_gain(stock_name, stock_dict)
+        # print(type(stock_gain))
+        return stock_price * stock_gain / 1000000
     # TODO: clean code
 
     def calculate_total_gain(
             self,
-            stock_names_list: list,
+            shortlist: list,
             stocks_dict: dict,
-            purchase_list: list = []
     ) -> float:
         """
         Calculates total gains for a list of stocks purchases
@@ -128,13 +130,12 @@ class CommonFunctions:
         :rtype: int
         """
         gain = 0
-        shortlist = self.purchase_list_to_stock_name_list(purchase_list, stock_names_list)
         for purchase in shortlist:
             gain += stocks_dict[purchase]['Cout'] * stocks_dict[purchase]['Benefice']
         return gain/1000000
 
     def calculate_remaining_limit(
-            self, initial_limit: int, purchase_list: list, stocks_names_list: list, stocks_dict: dict) -> int:
+            self, initial_limit: int, shortlist: list, stocks_dict: dict) -> int:
         """
         Calculates remaining purchase limit after a list of purchases. Initial limit - sum_all(stock_purchase * price)
         :param initial_limit: initial given limit for operations
@@ -148,10 +149,10 @@ class CommonFunctions:
         :return: remaining limit after purchases
         :rtype: int
         """
-        total_cost = self.calculate_total_cost(purchase_list, stocks_names_list, stocks_dict)
+        total_cost = self.calculate_total_cost(shortlist, stocks_dict)
         return initial_limit - total_cost
 
-    def calculate_total_cost(self, purchase_list: list, stocks_names_list: list, stocks_dict: dict) -> int:
+    def calculate_total_cost(self, shortlist: list, stocks_dict: dict) -> int:
         """
         Calculates total cost of a series of purchases
         :param purchase_list: contains all purchases
@@ -164,17 +165,17 @@ class CommonFunctions:
         :rtype: int
         """
         total_cost = 0
-        shortlist = self.purchase_list_to_stock_name_list(purchase_list, stocks_names_list)
         for purchase in shortlist:
             total_cost += stocks_dict[purchase]['Cout']
         return total_cost
 
     @staticmethod
     def purchase_list_to_stock_name_list(purchase_list: list, stock_name_list: list) -> list:
-        purchase_stock_name_list = []
-        for purchase_index in range(len(purchase_list)):
-            if purchase_list[purchase_index] == 1:
-                purchase_stock_name_list.append(stock_name_list[purchase_index])
+        # print(stock_name_list)
+        purchase_stock_name_list = [stock_name_list[stock_index] for stock_index in range(len(purchase_list)) if purchase_list[stock_index] == 1]
+        # for purchase_index in range(len(purchase_list)):
+        #     if purchase_list[purchase_index] == 1:
+        #         purchase_stock_name_list.append(stock_name_list[purchase_index])
         return purchase_stock_name_list
 
 
@@ -215,12 +216,20 @@ class BruteForceCalculation:
         # Declaration of best list variable that will stock the best solution found by the algo
         # Empty list if not provided
         best_list = best_list if best_list else [0] * len(stock_names_list)
+        best_shortlist = self.common_functions.purchase_list_to_stock_name_list(best_list, stock_names_list)
+        # Calculate best gain seen so far
+        best_gain = self.common_functions.calculate_total_gain(
+            shortlist=best_shortlist,
+            stocks_dict=stocks_dict
+        )
 
         purchase_list = purchase_list if purchase_list else [0] * len(stock_names_list)
+        shortlist = self.common_functions.purchase_list_to_stock_name_list(purchase_list, stock_names_list)
+        current_gain = self.common_functions.calculate_total_gain(shortlist, stocks_dict)
 
         # Declaration of the remaining limit value
         remaining_limit = self.common_functions.calculate_remaining_limit(
-                    purchase_limit, purchase_list, stock_names_list, stocks_dict)
+                    purchase_limit, shortlist, stocks_dict)
 
         # Save stock name and value for a given iteration
         stock_name = self.common_functions.get_stock_name(stock_index, stock_names_list)
@@ -230,27 +239,19 @@ class BruteForceCalculation:
         for purchase_quantity in range(0, min(int(remaining_limit/stock_price + 1), 2)):
             # We update the purchases quantity in the purchase list position of the given stock
             purchase_list[stock_index] = purchase_quantity
-
-            # Calculate best gain seen so far
-            best_gain = self.common_functions.calculate_total_gain(
-                stock_names_list=stock_names_list,
-                stocks_dict=stocks_dict,
-                purchase_list=best_list
-            )
+            shortlist.append(stock_name)
 
             # Calculate current gain
-            current_gain = self.common_functions.calculate_total_gain(
-                purchase_list=purchase_list,
-                stock_names_list=stock_names_list,
-                stocks_dict=stocks_dict
-            )
-
+            # print(current_gain)
+            current_gain += self.common_functions.calculate_stock_gain(stock_name, stocks_dict)
+            # print(current_gain)
             # If the current gain is better than the best found so far, we update
             # the best purchase list with the ongoing purchase test
             # print(current_gain)
             # print(best_gain)
             if current_gain > best_gain:
                 best_list = purchase_list.copy()
+                best_shortlist = shortlist.copy()
 
             # if we are not at then end of the list of stocks we recursively call the function
             if stock_index < len(stock_names_list) - 1:
@@ -262,10 +263,19 @@ class BruteForceCalculation:
                     stocks_dict=stocks_dict,
                     best_list=best_list
                 )
+                new_best_shortlist = self.common_functions.purchase_list_to_stock_name_list(new_best_list, stock_names_list)
+                # print(new_best_shortlist)
                 new_best_gain = self.common_functions.calculate_total_gain(
-                    purchase_list=new_best_list, stock_names_list=stock_names_list, stocks_dict=stocks_dict)
+                    shortlist=new_best_shortlist,
+                    stocks_dict=stocks_dict
+                )
+                # print(new_best_gain)
+                # print(best_gain)
+                # print(new_best_gain > best_gain)
                 if new_best_gain > best_gain:
                     best_list = new_best_list.copy()
+                    best_shortlist = new_best_shortlist.copy()
+                    best_gain = new_best_gain
             # print(best_list)
             # print(best_gain)
             # print(purchase_list)
@@ -274,6 +284,8 @@ class BruteForceCalculation:
         # We set the stock purchase quantity back to 0 in the purchase list in order to test over from zéro with
         # a higher previous index.
         purchase_list[stock_index] = 0
+        shortlist.remove(stock_names_list[stock_index])
+        current_gain -= self.common_functions.calculate_stock_gain(stock_names_list[stock_index], stocks_dict)
 
         # return best list
         return best_list
@@ -285,16 +297,23 @@ def main():
     dict_stocks = common_functions.csv_to_dict(common_functions.DATASET_FILE0)
     stock_names_list = common_functions.stock_dict_to_stock_name_list(dict_stocks)
     best_list = brute_force_calculation.brute_force_calculation(50000, 0, stock_names_list, dict_stocks)
-    best_gain = common_functions.calculate_total_gain(stock_names_list, dict_stocks, best_list)
-    total_cost = common_functions.calculate_total_cost(best_list, stock_names_list, dict_stocks)
-    best_list_names = common_functions.purchase_list_to_stock_name_list(best_list, stock_names_list)
+    shortlist = common_functions.purchase_list_to_stock_name_list(best_list, stock_names_list)
+    best_gain = common_functions.calculate_total_gain(shortlist, dict_stocks)
+    total_cost = common_functions.calculate_total_cost(shortlist, dict_stocks)
     # print(best_list)
     print(f"best gain : {best_gain}")
     print(f"total cost : {total_cost/100}")
-    print(f"actions à acheter : {best_list_names}")
+    print(f"actions à acheter : {shortlist}")
 
 
 if __name__ == "__main__":
+    tracemalloc.start()
     start_time = time.time()
     main()
     print("--- %s seconds ---" % (time.time() - start_time))
+    snapshot = tracemalloc.take_snapshot()
+    top_stats = snapshot.statistics('lineno')
+
+    print("[ Top 10 ]")
+    for stat in top_stats[:10]:
+        print(stat)
