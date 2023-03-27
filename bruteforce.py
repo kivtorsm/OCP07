@@ -11,6 +11,7 @@ class CommonFunctions:
     DATASET_FILE0_15 = "test_datasets/dataset0_15.csv"
     DATASET_FILE1 = "test_datasets/dataset1.csv"
     DATASET_FILE2 = "test_datasets/dataset2.csv"
+    DATASET_FILE2_750 = "test_datasets/dataset2_750.csv"
     DATASET_FILE2_500 = "test_datasets/dataset2_500.csv"
     DATASET_FILE2_250 = "test_datasets/dataset2_250.csv"
 
@@ -292,13 +293,13 @@ def main():
 
 
 if __name__ == "__main__":
-    tracemalloc.start()
+    # tracemalloc.start()
     start_time = time.time()
     main()
     print("--- %s seconds ---" % (time.time() - start_time))
-    snapshot = tracemalloc.take_snapshot()
-    top_stats = snapshot.statistics('lineno')
-
-    print("[ Top 10 ]")
-    for stat in top_stats[:10]:
-        print(stat)
+    # snapshot = tracemalloc.take_snapshot()
+    # top_stats = snapshot.statistics('lineno')
+    #
+    # print("[ Top 10 ]")
+    # for stat in top_stats[:10]:
+    #     print(stat)
