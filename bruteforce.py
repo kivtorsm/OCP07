@@ -33,6 +33,17 @@ class CommonFunctions:
             return dict_stocks
 
     @staticmethod
+    def get_price_dict(stock_dict: dict) -> dict:
+        """
+        Gets a list of stock names from a dict
+        :param stock_dict: dictionary containing all stocks data
+        :type stock_dict: dict
+        :return: list of stock names
+        :rtype: list
+        """
+        return dict({key: value['Cout'] for key, value in stock_dict.items()})
+
+    @staticmethod
     def stock_dict_to_stock_name_list(stock_dict: dict) -> list:
         """
         Gets a list of stock names from a dict
@@ -82,23 +93,29 @@ class CommonFunctions:
         """
         return stock_names_list[stock_index]
 
-    def calculate_stock_gain(self, quantity: int, stock_name: str, stock_dict: dict) -> int:
-        """
-        Calculates stock for the purchase of a single stock value.
-        :param quantity: purchase quantity for the stock
-        :type quantity: int
-        :param stock_name: name of the stock being purchased
-        :type stock_name: str
-        :param stock_dict: dictionary containing all stock data
-        :type stock_dict: dict
-        :return: stock gain up to 2 numbers below 1. given as *1000000 int value
-        :rtype: int
-        """
-        stock_price = self.get_stock_price(stock_name, stock_dict)
-        stock_gain = self.get_stock_predicted_gain(stock_name, stock_dict)
-        return quantity * stock_price * stock_gain
+    # def calculate_stock_gain(self, quantity: int, stock_name: str, stock_dict: dict) -> int:
+    #     """
+    #     Calculates stock for the purchase of a single stock value.
+    #     :param quantity: purchase quantity for the stock
+    #     :type quantity: int
+    #     :param stock_name: name of the stock being purchased
+    #     :type stock_name: str
+    #     :param stock_dict: dictionary containing all stock data
+    #     :type stock_dict: dict
+    #     :return: stock gain up to 2 numbers below 1. given as *1000000 int value
+    #     :rtype: int
+    #     """
+    #     stock_price = self.get_stock_price(stock_name, stock_dict)
+    #     stock_gain = self.get_stock_predicted_gain(stock_name, stock_dict)
+    #     return quantity * stock_price * stock_gain
+    # TODO: clean code
 
-    def calculate_total_gain(self, stock_names_list: list, stocks_dict: dict, purchase_list: list = []) -> float:
+    def calculate_total_gain(
+            self,
+            stock_names_list: list,
+            stocks_dict: dict,
+            purchase_list: list = []
+    ) -> float:
         """
         Calculates total gains for a list of stocks purchases
         :param purchase_list: list of stocks purchases
@@ -111,9 +128,9 @@ class CommonFunctions:
         :rtype: int
         """
         gain = 0
-        for purchase_index in range(len(purchase_list)):
-            stock_name = stock_names_list[purchase_index]
-            gain += self.calculate_stock_gain(purchase_list[purchase_index], stock_name, stocks_dict)
+        shortlist = self.purchase_list_to_stock_name_list(purchase_list, stock_names_list)
+        for purchase in shortlist:
+            gain += stocks_dict[purchase]['Cout'] * stocks_dict[purchase]['Benefice']
         return gain/1000000
 
     def calculate_remaining_limit(
@@ -134,8 +151,7 @@ class CommonFunctions:
         total_cost = self.calculate_total_cost(purchase_list, stocks_names_list, stocks_dict)
         return initial_limit - total_cost
 
-    @staticmethod
-    def calculate_total_cost(purchase_list: list, stocks_names_list: list, stocks_dict: dict) -> int:
+    def calculate_total_cost(self, purchase_list: list, stocks_names_list: list, stocks_dict: dict) -> int:
         """
         Calculates total cost of a series of purchases
         :param purchase_list: contains all purchases
@@ -148,8 +164,9 @@ class CommonFunctions:
         :rtype: int
         """
         total_cost = 0
-        for purchase_index in range(len(purchase_list)):
-            total_cost += purchase_list[purchase_index] * int(stocks_dict[stocks_names_list[purchase_index]]['Cout'])
+        shortlist = self.purchase_list_to_stock_name_list(purchase_list, stocks_names_list)
+        for purchase in shortlist:
+            total_cost += stocks_dict[purchase]['Cout']
         return total_cost
 
     @staticmethod
@@ -213,10 +230,6 @@ class BruteForceCalculation:
         for purchase_quantity in range(0, min(int(remaining_limit/stock_price + 1), 2)):
             # We update the purchases quantity in the purchase list position of the given stock
             purchase_list[stock_index] = purchase_quantity
-
-            # We update the remaining limit based on the ongoing quantity purchase test
-            remaining_limit = self.common_functions.calculate_remaining_limit(
-                purchase_limit, purchase_list, stock_names_list, stocks_dict)
 
             # Calculate best gain seen so far
             best_gain = self.common_functions.calculate_total_gain(
