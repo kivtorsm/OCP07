@@ -166,30 +166,12 @@ class Optimized:
 
 
 def main():
-    # # save start time
-    # start_time = time.time()
-
     # Initialize controllers
     common_functions = CommonFunctions()
     optimized_calculation = Optimized(common_functions)
 
-    # Start run as a process
-    p = multiprocessing.Process(target=optimized_calculation.run_optimized, name="run_optimized")
-    p.start()
-
-    # Wait x seconds for the process
-    # time.sleep(10)
-    p.join()
-
-    # Terminate foo
-    if p.is_alive():
-        print("foo is running... let's kill it...")
-
-        # Terminate foo
-        p.terminate()
-        p.join()
-
-    # print("--- %s seconds ---" % (time.time() - start_time))
+    # Run optimized
+    optimized_calculation.run_optimized()
 
 
 if __name__ == "__main__":

@@ -153,12 +153,13 @@ class CommonFunctions:
         return total_cost
 
     @staticmethod
-    def purchase_list_to_stock_name_list (purchase_list: list, stock_name_list: list) -> list:
+    def purchase_list_to_stock_name_list(purchase_list: list, stock_name_list: list) -> list:
         purchase_stock_name_list = []
         for purchase_index in range(len(purchase_list)):
             if purchase_list[purchase_index] == 1:
                 purchase_stock_name_list.append(stock_name_list[purchase_index])
         return purchase_stock_name_list
+
 
 class BruteForceCalculation:
     """
