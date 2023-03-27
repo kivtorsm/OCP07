@@ -94,7 +94,7 @@ class CommonFunctions:
         """
         return stock_names_list[stock_index]
 
-    def calculate_stock_gain(self, stock_name: str, stock_dict: dict) -> int:
+    def calculate_stock_gain(self, stock_name: str, stock_dict: dict) -> float:
         """
         Calculates stock for the purchase of a single stock value.
         :param quantity: purchase quantity for the stock
@@ -234,6 +234,7 @@ class BruteForceCalculation:
 
             # Calculate current gain
             current_gain += self.common_functions.calculate_stock_gain(stock_name, stocks_dict)
+
             # If the current gain is better than the best found so far, we update
             # the best purchase list with the ongoing purchase test
 
@@ -254,6 +255,7 @@ class BruteForceCalculation:
                 new_best_shortlist = self.common_functions.purchase_list_to_stock_name_list(
                     new_best_list, stock_names_list
                 )
+
                 new_best_gain = self.common_functions.calculate_total_gain(
                     shortlist=new_best_shortlist,
                     stocks_dict=stocks_dict
@@ -263,7 +265,6 @@ class BruteForceCalculation:
                     best_list = new_best_list.copy()
                     best_shortlist = new_best_shortlist.copy()
                     best_gain = new_best_gain
-
 
         # We set the stock purchase quantity back to 0 in the purchase list in order to test over from zéro with
         # a higher previous index.
