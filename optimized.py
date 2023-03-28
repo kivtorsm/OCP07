@@ -1,4 +1,4 @@
-import multiprocessing
+import tracemalloc
 import time
 
 from operator import getitem
@@ -39,7 +39,6 @@ class Optimized:
                 :rtype:
                 """
 
-        purchase_list = [0] * len(stock_names_list)
         shortlist = []
 
         for stock_index in range(len(stock_names_list)):
@@ -47,18 +46,19 @@ class Optimized:
             stock_price = self.common_functions.get_stock_price(stock_name, stocks_dict)
             remaining_limit = self.common_functions.calculate_remaining_limit(purchase_limit, shortlist, stocks_dict)
             if remaining_limit > stock_price:
-                purchase_list[stock_index] = 1
                 shortlist.append(stock_name)
 
             else:
-                return purchase_list
+                return shortlist
 
     def run_optimized(self):
+        tracemalloc.start()
+
         # save start time
         start_time = time.time()
 
         # Modifier ici la valeur du dataset à utiliser
-        dict_stocks = self.common_functions.csv_to_dict(self.common_functions.DATASET_FILE2)
+        dict_stocks = self.common_functions.csv_to_dict(self.common_functions.DATASET_FILE0)
         dict_stocks_sorted = self.sort_dict_by_gain(dict_stocks)
         stock_names_list = self.common_functions.stock_dict_to_stock_name_list(dict_stocks_sorted)
         print("--- %s seconds de triage ---" % (time.time() - start_time))
@@ -66,12 +66,11 @@ class Optimized:
         # save start time
         start_time2 = time.time()
 
-        best_list = self.optimized_calculation(
+        best_shortlist = self.optimized_calculation(
             50000,
             stock_names_list,
             dict_stocks_sorted
         )
-        best_shortlist = self.common_functions.purchase_list_to_stock_name_list(best_list, stock_names_list)
 
         print("--- %s seconds de recherche de solution---" % (time.time() - start_time2))
 
@@ -85,6 +84,12 @@ class Optimized:
 
         print("--- %s seconds au total---" % (time.time() - start_time))
 
+        snapshot = tracemalloc.take_snapshot()
+        top_stats = snapshot.statistics('lineno')
+
+        print("[ Top 10 ]")
+        for stat in top_stats[:10]:
+            print(stat)
 
 def main():
     # Initialize controllers
