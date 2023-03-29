@@ -52,13 +52,13 @@ class Optimized:
         return shortlist
 
     def run_optimized(self):
-        # tracemalloc.start()
+        tracemalloc.start()
 
         # save start time
         start_time = time.time()
 
         # Modifier ici la valeur du dataset à utiliser
-        dict_stocks = self.common_functions.csv_to_dict(self.common_functions.DATASET_FILE1)
+        dict_stocks = self.common_functions.csv_to_dict(self.common_functions.DATASET_FILE0)
         dict_stocks_sorted = self.sort_dict_by_gain(dict_stocks)
         stock_names_list = self.common_functions.stock_dict_to_stock_name_list(dict_stocks_sorted)
         print("--- %s seconds de triage ---" % (time.time() - start_time))
@@ -84,12 +84,8 @@ class Optimized:
 
         print("--- %s seconds au total---" % (time.time() - start_time))
 
-        # snapshot = tracemalloc.take_snapshot()
-        # top_stats = snapshot.statistics('lineno')
-        #
-        # print("[ Top 10 ]")
-        # for stat in top_stats[:10]:
-        #     print(stat)
+        current, peak = tracemalloc.get_traced_memory()
+        print(f"{round(peak / 1000):,} ko".replace(",", " "))
 
 def main():
     # Initialize controllers

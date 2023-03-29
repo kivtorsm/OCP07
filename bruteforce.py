@@ -293,13 +293,9 @@ def main():
 
 
 if __name__ == "__main__":
-    # tracemalloc.start()
+    tracemalloc.start()
     start_time = time.time()
     main()
     print("--- %s seconds ---" % (time.time() - start_time))
-    # snapshot = tracemalloc.take_snapshot()
-    # top_stats = snapshot.statistics('lineno')
-    #
-    # print("[ Top 10 ]")
-    # for stat in top_stats[:10]:
-    #     print(stat)
+    current, peak = tracemalloc.get_traced_memory()
+    print(f"{round(peak / 1000):,} ko".replace(",", " "))
